@@ -11,6 +11,11 @@ module Framework
       (Pathname.new(@fwk_path) + Pathname.new('Resources')).delete
     end
 
+    def delete_static_resources
+      Pathname.new(@resources_path).rmtree
+      (Pathname.new('Assets')).delete
+    end
+
     def initialize(name, platform, embedded)
       @name = name
       @platform = platform
@@ -23,6 +28,11 @@ module Framework
       make_headers
       make_resources
       make_current_version
+    end
+
+    def make_static
+      make_static_headers
+      make_static_resources
     end
 
     private
@@ -50,6 +60,16 @@ module Framework
 
     def make_resources
       @resources_path = @versions_path + Pathname.new('Resources')
+      @resources_path.mkpath unless @resources_path.exist?
+    end
+
+    def make_static_headers
+      @headers_path = Pathname.new('Headers')
+      @headers_path.mkpath unless @headers_path.exist?
+    end
+
+    def make_static_resources
+      @resources_path = Pathname.new('Assets')
       @resources_path.mkpath unless @resources_path.exist?
     end
 

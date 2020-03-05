@@ -45,6 +45,10 @@ module Pod
       else
         build_static_library_for_mac(output)
       end
+
+      create_library
+      copy_headers
+      copy_static_resources
     end
 
     def build_static_framework
@@ -192,6 +196,26 @@ module Pod
       defines
     end
 
+    def copy_static_headers
+      headers_source_root = "#{@public_headers_root}/#{@spec.name}"
+      Dir.glob("#{headers_source_root}/**/*.h").
+          each { |h| `ditto #{h} #{@fwk.headers_path}/#{h.sub(headers_source_root, '')}` }
+    end
+
+    def copy_static_resources
+      bundles = Dir.glob("#{@static_sandbox_root}/build/*.bundle")
+
+      `cp -rp #{@static_sandbox_root}/build/*.bundle #{@fwk.resources_path} 2>&1`
+      resources = expand_paths(@spec.consumer(@platform).resources)
+      if resources.count == 0 && bundles.count == 0
+        @fwk.delete_static_resources
+        return
+      end
+      if resources.count > 0
+        `cp -rp #{resources.join(' ')} #{@fwk.resources_path}`
+      end
+    end
+
     def copy_headers
       headers_source_root = "#{@public_headers_root}/#{@spec.name}"
 
@@ -248,6 +272,11 @@ MAP
     def create_framework
       @fwk = Framework::Tree.new(@spec.name, @platform.name.to_s, @embedded)
       @fwk.make
+    end
+
+    def create_library
+      @fwk = Framework::Tree.new(@spec.name, @platform.name.to_s, @embedded)
+      @fwk.make_static
     end
 
     def dependency_count
